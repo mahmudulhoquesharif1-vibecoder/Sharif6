@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal Neumorphic Store - Fixed</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background-color: #e0e0e0;
+            color: #333;
+            overflow: hidden; /* পপআপ না কাটা পর্যন্ত স্ক্রল বন্ধ */
+        }
+
+        /* Neumorphic Design */
+        .neu-flat {
+            background: #e0e0e0;
+            box-shadow: 8px 8px 16px #bebebe, -8px -8px 16px #ffffff;
+            border-radius: 15px;
+            border: none;
+        }
+
+        .neu-pressed {
+            background: #e0e0e0;
+            box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+            border-radius: 10px;
+            border: none;
+        }
+
+        /* Layout */
+        nav { padding: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-weight: 900; padding: 10px 25px; }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 40px;
+            padding: 40px 20px;
+            transition: opacity 0.5s ease;
+        }
+
+        .product-card { padding: 30px; text-align: center; }
+        .product-image { 
+            width: 100%; height: 150px; margin-bottom: 20px; 
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; font-weight: bold; color: #888;
+        }
+
+        /* Cookie Overlay - এটি এখন ক্লিক করলেই পুরোপুরি গায়েব হবে */
+        #cookie-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(224, 224, 224, 0.95); /* একটু বেশি সাদা রাখা হয়েছে শুরুতে */
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .cookie-card {
+            position: relative;
+            padding: 60px 40px;
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* ক্রস বাটন */
+        .close-btn {
+            position: absolute;
+            top: 20px; right: 20px;
+            width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; 
+            cursor: default; /* শুরুতে কোনো কার্সার নাই */
+            border-radius: 50%;
+            color: transparent; /* শুরুতে দেখা যাবে না */
+            transition: 0.3s;
+        }
+
+        /* নোটিফিকেশন বার */
+        #notification-bar {
+            position: fixed;
+            top: -150px; left: 50%;
+            transform: translateX(-50%);
+            width: 95%; max-width: 600px;
+            background: #000; color: #fff;
+            padding: 30px; text-align: center;
+            border-radius: 0 0 25px 25px;
+            z-index: 2000;
+            transition: top 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        }
+
+        /* Classes to show/hide */
+        .show-overlay { display: flex !important; }
+        .animate-card { transform: translateY(0) !important; opacity: 1 !important; }
+    </style>
+</head>
+<body>
+
+    <div id="notification-bar">
+        Wait wait! Are you fasting today? So don't take cookies till <b>"Iftar"</b> 😁
+    </div>
+
+    <nav>
+        <div class="logo neu-flat">MAMUN STORE</div>
+        <div class="neu-flat" style="padding: 10px 20px;">Cart (0)</div>
+    </nav>
+
+    <div class="container" id="main-content" style="opacity: 0.2;">
+        <div class="product-card neu-flat">
+            <div class="product-image neu-pressed">Premium Hoodie</div>
+            <button class="neu-flat btn" style="padding: 10px 20px; margin-top: 10px; cursor: pointer;">Buy Now</button>
+        </div>
+        <div class="product-card neu-flat">
+            <div class="product-image neu-pressed">Minimal Watch</div>
+            <button class="neu-flat btn" style="padding: 10px 20px; margin-top: 10px; cursor: pointer;">Buy Now</button>
+        </div>
+        <div class="product-card neu-flat">
+            <div class="product-image neu-pressed">Tech Gadget</div>
+            <button class="neu-flat btn" style="padding: 10px 20px; margin-top: 10px; cursor: pointer;">Buy Now</button>
+        </div>
+    </div>
+
+    <div id="cookie-overlay">
+        <div class="cookie-card neu-flat" id="cookie-card">
+            <div class="close-btn" id="close-btn">×</div>
+            
+            <h1 style="font-size: 4rem; margin-bottom: 15px;">🍪</h1>
+            <h2 style="margin-bottom: 10px;">Cookie Alert!</h2>
+            <p style="margin: 20px 0; color: #666; line-height: 1.5;">We use cookies to enhance your experience. You must accept them to proceed.</p>
+            <button class="neu-flat" id="accept-btn" style="width: 100%; padding: 18px; font-weight: bold; cursor: pointer; font-size: 1rem;">ACCEPT COOKIES</button>
+        </div>
+    </div>
+
+    <script>
+        let isPrankDone = false;
+
+        window.onload = function() {
+            const overlay = document.getElementById('cookie-overlay');
+            const card = document.getElementById('cookie-card');
+            const acceptBtn = document.getElementById('accept-btn');
+            const closeBtn = document.getElementById('close-btn');
+            const notify = document.getElementById('notification-bar');
+            const mainContent = document.getElementById('main-content');
+
+            // ১. লোড হওয়ার ২ সেকেন্ড পর কুকিজ পপআপ আসবে
+            setTimeout(() => {
+                overlay.classList.add('show-overlay');
+                setTimeout(() => { card.classList.add('animate-card'); }, 100);
+            }, 1500);
+
+            // ২. Accept বাটনে ক্লিক করলে প্র্যাঙ্ক শুরু
+            acceptBtn.addEventListener('click', function() {
+                // বাটন অ্যানিমেশন (Pressed Effect)
+                acceptBtn.classList.remove('neu-flat');
+                acceptBtn.classList.add('neu-pressed');
+                
+                // ওপর থেকে ফানি নোটিফিকেশন নামবে
+                notify.style.top = "0";
+                
+                // প্র্যাঙ্ক ডান!
+                isPrankDone = true;
+                
+                // এখন ক্রস বাটনটি ভিজিবল এবং কাজ করার উপযোগী হবে
+                closeBtn.classList.add('neu-flat');
+                closeBtn.style.color = "#333";
+                closeBtn.style.cursor = "pointer";
+
+                // ৫ সেকেন্ড পর নোটিফিকেশন বারটি আবার উপরে চলে যাবে
+                setTimeout(() => {
+                    notify.style.top = "-150px";
+                    acceptBtn.classList.remove('neu-pressed');
+                    acceptBtn.classList.add('neu-flat');
+                }, 5000);
+            });
+
+            // ৩. ক্রস বাটনে ক্লিক করলে যা হবে
+            closeBtn.addEventListener('click', function() {
+                if (isPrankDone) {
+                    // পপআপ কার্ডটি ছোট হয়ে মিলিয়ে যাবে
+                    card.style.transform = "scale(0.8)";
+                    card.style.opacity = "0";
+                    
+                    setTimeout(() => {
+                        // পুরো লেয়ারটি রিমুভ করে দেওয়া হবে
+                        overlay.style.display = 'none';
+                        
+                        // মেইন ওয়েবসাইট উজ্জ্বল হবে এবং স্ক্রল চালু হবে
+                        mainContent.style.opacity = "1";
+                        document.body.style.overflow = 'auto';
+                    }, 400);
+                } else {
+                    // প্র্যাঙ্ক না দেখা পর্যন্ত কিছুই হবে না
+                    console.log("Not allowed yet!");
+                }
+            });
+        };
+    </script>
+</body>
+</html>
